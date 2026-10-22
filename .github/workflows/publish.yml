@@ -54,6 +54,9 @@ jobs:
           echo "publishing $CURRENT"
       - run: npm publish --access public
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # NPM_TOEKN fallback: the secret was initially created with a typo.
+          # Rename it to NPM_TOKEN in repo settings when convenient — the
+          # fallback can then be removed.
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN || secrets.NPM_TOEKN }}
       - name: Verify on registry
         run: npm view opencode-coding-quota version
