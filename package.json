@@ -1,5 +1,5 @@
 {
-  "name": "opencode-usage",
+  "name": "opencode-coding-quota",
   "version": "0.2.0",
   "type": "module",
   "description": "OpenCode TUI sidebar plugin: remaining quota for GLM (CN/global), Kimi Coding Plan and DeepSeek",
@@ -22,6 +22,7 @@
     "./tui": "./dist/tui.js"
   },
   "files": [
+    "LICENSE",
     "README.md",
     "dist",
     "src"

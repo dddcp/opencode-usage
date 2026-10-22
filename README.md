@@ -25,7 +25,19 @@ API Key 解析顺序：provider 配置里的 `options.apiKey` →
 
 ## 安装
 
-要求 opencode v2（TUI 插件系统）。无需构建——opencode 直接加载 `tui.tsx` 源文件。
+要求 opencode v2（TUI 插件系统）。
+
+### 方式一：npm 安装（推荐）
+
+```bash
+opencode plugin add opencode-coding-quota
+```
+
+（npm 包名是 `opencode-coding-quota`，`opencode-usage` 在 npm 上已被其他包占用。）
+
+### 方式二：从源码安装（开发 / 不依赖 npm）
+
+无需构建——opencode 直接加载 `tui.tsx` 源文件。
 
 ```bash
 git clone https://github.com/dddcp/opencode-usage.git
