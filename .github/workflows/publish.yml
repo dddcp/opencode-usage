@@ -12,6 +12,7 @@ on:
 
 permissions:
   contents: read
+  id-token: write # npm trusted publishing (OIDC) — tokenless, no 2FA needed
 
 jobs:
   build-test:
@@ -52,11 +53,9 @@ jobs:
             exit 1
           fi
           echo "publishing $CURRENT"
-      - run: npm publish --access public
-        env:
-          # NPM_TOEKN fallback: the secret was initially created with a typo.
-          # Rename it to NPM_TOKEN in repo settings when convenient — the
-          # fallback can then be removed.
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN || secrets.NPM_TOEKN }}
+      # Tokenless publish via npm trusted publishing (OIDC). Requires the
+      # trusted publisher to be configured on the npm package page:
+      # repository dddcp/opencode-usage, workflow publish.yml.
+      - run: npm publish --provenance --access public
       - name: Verify on registry
         run: npm view opencode-coding-quota version
