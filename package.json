@@ -4,6 +4,10 @@
   "type": "module",
   "description": "OpenCode TUI sidebar plugin: remaining quota for GLM (CN/global), Kimi Coding Plan and DeepSeek",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dddcp/opencode-usage.git"
+  },
   "keywords": [
     "opencode",
     "opencode-plugin",
@@ -14,12 +18,27 @@
     "kimi",
     "deepseek"
   ],
+  "exports": {
+    "./tui": "./dist/tui.js"
+  },
+  "files": [
+    "README.md",
+    "dist",
+    "src"
+  ],
   "scripts": {
+    "build": "tsdown",
     "setup": "node scripts/install.mjs",
     "uninstall": "node scripts/install.mjs remove",
     "typecheck": "tsc --noEmit",
     "test": "node test/run.mjs",
     "test:live": "node test/run.mjs --live && node test/verify-resolve.mjs"
+  },
+  "peerDependencies": {
+    "@opencode/plugin": ">=2.1.0",
+    "@opentui/core": ">=0.6.6",
+    "@opentui/solid": ">=0.6.6",
+    "solid-js": ">=1.9.0"
   },
   "devDependencies": {
     "@opencode/client": "2.1.2",
@@ -27,7 +46,9 @@
     "@opentui/core": "0.6.6",
     "@opentui/solid": "0.6.6",
     "@types/node": "^22.13.9",
+    "rolldown-plugin-solid": "^0.2.1",
     "solid-js": "1.9.12",
+    "tsdown": "^0.23.1",
     "typescript": "~5.9.2"
   }
 }
