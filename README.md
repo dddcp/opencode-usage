@@ -2,7 +2,9 @@
 
 OpenCode TUI 侧边栏插件：在会话右侧面板实时查看当前模型所属 Coding 套餐的剩余额度。
 
-![screenshot](docs/screenshot.png)
+![GLM Coding Plan](docs/screenshot.png)
+
+![DeepSeek balance](docs/screenshot-deepseek.png)
 
 面板跟随 TUI 中当前选中的模型：切换模型时自动切换到对应 provider 的额度；
 每 5 分钟自动刷新，每轮对话结束后 3 秒也会刷新一次，点击 `↻` 手动刷新，
