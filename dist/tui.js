@@ -26,8 +26,8 @@ var AuthError = class extends Error {
 *
 * Verified live on 2026-10-22.
 */
-const REQUEST_TIMEOUT_MS$2 = 15e3;
-function isRecord$2(v) {
+const REQUEST_TIMEOUT_MS$3 = 15e3;
+function isRecord$3(v) {
 	return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 const SYMBOLS = {
@@ -39,7 +39,7 @@ function parseDeepseekBalance(payload) {
 	const rows = [];
 	const infos = Array.isArray(payload.balance_infos) ? payload.balance_infos : [];
 	for (const info of infos) {
-		if (!isRecord$2(info)) continue;
+		if (!isRecord$3(info)) continue;
 		const currency = typeof info.currency === "string" ? info.currency : "";
 		const total = typeof info.total_balance === "string" ? Number.parseFloat(info.total_balance) : NaN;
 		if (!Number.isFinite(total)) continue;
@@ -65,7 +65,7 @@ function parseDeepseekBalance(payload) {
 async function queryDeepseekBalance(apiKey, baseURL, title) {
 	const url = `${baseURL.replace(/\/+$/, "")}/user/balance`;
 	const controller = new AbortController();
-	const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS$2);
+	const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS$3);
 	let resp;
 	try {
 		resp = await globalThis.fetch(url, {
@@ -92,7 +92,7 @@ async function queryDeepseekBalance(apiKey, baseURL, title) {
 	} catch {
 		throw new Error("DeepSeek: malformed JSON response");
 	}
-	if (!isRecord$2(payload)) throw new Error("DeepSeek: unexpected response shape");
+	if (!isRecord$3(payload)) throw new Error("DeepSeek: unexpected response shape");
 	return {
 		kind: "deepseek",
 		title,
@@ -128,8 +128,8 @@ async function queryDeepseekBalance(apiKey, baseURL, title) {
 * accepted. Business errors (bad key) can come back with HTTP 200, so the
 * `code`/`success` body fields must be checked.
 */
-const REQUEST_TIMEOUT_MS$1 = 15e3;
-function isRecord$1(v) {
+const REQUEST_TIMEOUT_MS$2 = 15e3;
+function isRecord$2(v) {
 	return typeof v === "object" && v !== null;
 }
 function asString(v) {
@@ -179,7 +179,7 @@ function parseGlmLimits(data) {
 	const unclassified = [];
 	const limits = data.limits;
 	if (Array.isArray(limits)) for (const raw of limits) {
-		if (!isRecord$1(raw)) continue;
+		if (!isRecord$2(raw)) continue;
 		const type = (asString(raw.type) ?? "").toLowerCase();
 		if (type !== "credit_limit" && type !== "tokens_limit") continue;
 		const slot = classifyWindow(raw);
@@ -214,7 +214,7 @@ function parseGlmLimits(data) {
 async function queryGlmUsage(apiKey, baseURL, title) {
 	const url = `${glmQuotaBase(baseURL)}/api/monitor/usage/quota/limit`;
 	const controller = new AbortController();
-	const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS$1);
+	const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS$2);
 	let resp;
 	try {
 		resp = await globalThis.fetch(url, {
@@ -238,7 +238,7 @@ async function queryGlmUsage(apiKey, baseURL, title) {
 	} catch {
 		throw new Error(`HTTP ${resp.status}: malformed JSON response`);
 	}
-	if (isRecord$1(body)) {
+	if (isRecord$2(body)) {
 		const code = asFiniteNumber(body.code);
 		if (body.success === false || code != null && code !== 200) {
 			if (code === 401 || code === 403) throw new AuthError(`GLM: invalid or expired API key (code ${code})`);
@@ -246,8 +246,8 @@ async function queryGlmUsage(apiKey, baseURL, title) {
 		}
 	}
 	if (!resp.ok) throw new Error(`GLM: HTTP ${resp.status}`);
-	const data = isRecord$1(body) ? body.data : void 0;
-	if (!isRecord$1(data)) throw new Error("GLM: missing 'data' field in response");
+	const data = isRecord$2(body) ? body.data : void 0;
+	if (!isRecord$2(data)) throw new Error("GLM: missing 'data' field in response");
 	const level = asString(data.level);
 	return {
 		kind: "glm",
@@ -288,12 +288,12 @@ async function queryGlmUsage(apiKey, baseURL, title) {
 *     no duplicate rows are emitted.
 *   - `priceInCents` may arrive as a string.
 */
-const REQUEST_TIMEOUT_MS = 15e3;
+const REQUEST_TIMEOUT_MS$1 = 15e3;
 const USER_AGENT = "KimiCLI/1.6";
-function isRecord(v) {
+function isRecord$1(v) {
 	return typeof v === "object" && v !== null && !Array.isArray(v);
 }
-function toFiniteNumber(v) {
+function toFiniteNumber$1(v) {
 	if (typeof v === "number" && Number.isFinite(v)) return v;
 	if (typeof v === "string" && v.trim() !== "") {
 		const n = Number(v);
@@ -310,9 +310,9 @@ function parseResetTime(v) {
 }
 /** derive used/percent from a `limit` + (`used` | `remaining`) detail object */
 function detailRow(label, detail) {
-	const limit = toFiniteNumber(detail.limit ?? detail.limit_amount);
-	const used = toFiniteNumber(detail.used ?? detail.used_amount);
-	const remaining = toFiniteNumber(detail.remaining);
+	const limit = toFiniteNumber$1(detail.limit ?? detail.limit_amount);
+	const used = toFiniteNumber$1(detail.used ?? detail.used_amount);
+	const remaining = toFiniteNumber$1(detail.remaining);
 	let resolvedUsed = used;
 	if (resolvedUsed == null && remaining != null && limit != null) resolvedUsed = limit - remaining;
 	if (resolvedUsed == null || limit == null || limit <= 0) return null;
@@ -327,7 +327,7 @@ function detailRow(label, detail) {
 }
 /** `usages.limit_*` entries: only a 0–1 ratio, no absolute numbers */
 function ratioRow(label, entry) {
-	const ratio = toFiniteNumber(entry.used_ratio);
+	const ratio = toFiniteNumber$1(entry.used_ratio);
 	if (ratio == null) return null;
 	return {
 		label,
@@ -340,8 +340,8 @@ function ratioRow(label, entry) {
 }
 /** minutes covered by a `limits[].window` — used to spot the 300-minute (5h) slot */
 function windowMinutes(window) {
-	if (!isRecord(window)) return null;
-	const duration = toFiniteNumber(window.duration);
+	if (!isRecord$1(window)) return null;
+	const duration = toFiniteNumber$1(window.duration);
 	if (duration == null) return null;
 	const unit = String(window.timeUnit ?? window.time_unit ?? "").toUpperCase();
 	if (unit.includes("MINUTE")) return duration;
@@ -351,12 +351,12 @@ function windowMinutes(window) {
 	return null;
 }
 function priceInCents(v) {
-	if (!isRecord(v)) return void 0;
-	return toFiniteNumber(v.priceInCents);
+	if (!isRecord$1(v)) return void 0;
+	return toFiniteNumber$1(v.priceInCents);
 }
 /** `booster_wallet` (snake, live) / `boosterWallet` (camel, older) — 加油包 */
 function boosterRow(payload) {
-	const wallet = isRecord(payload.booster_wallet) && Object.keys(payload.booster_wallet).length > 0 ? payload.booster_wallet : isRecord(payload.boosterWallet) ? payload.boosterWallet : void 0;
+	const wallet = isRecord$1(payload.booster_wallet) && Object.keys(payload.booster_wallet).length > 0 ? payload.booster_wallet : isRecord$1(payload.boosterWallet) ? payload.boosterWallet : void 0;
 	if (wallet == null) return null;
 	if (!(wallet.status === "STATUS_ENABLED" || wallet.monthlyChargeLimitEnabled === true || wallet.monthly_charge_limit_enabled === true)) return {
 		label: "Booster",
@@ -395,19 +395,19 @@ function parseKimiPayload(payload) {
 	const rows = [];
 	const coveredFiveHour = /* @__PURE__ */ new Set();
 	if (Array.isArray(payload.data)) for (const item of payload.data) {
-		if (!isRecord(item)) continue;
+		if (!isRecord$1(item)) continue;
 		if (item.model_name === "all" || item.modelName === "all") {
 			const row = detailRow("Week", item);
 			if (row != null) rows.unshift(row);
 		}
 	}
-	if (rows.length === 0 && isRecord(payload.usage)) {
+	if (rows.length === 0 && isRecord$1(payload.usage)) {
 		const row = detailRow("Week", payload.usage);
 		if (row != null) rows.push(row);
 	}
 	if (Array.isArray(payload.limits)) for (const item of payload.limits) {
-		if (!isRecord(item)) continue;
-		const detail = isRecord(item.detail) ? item.detail : item;
+		if (!isRecord$1(item)) continue;
+		const detail = isRecord$1(item.detail) ? item.detail : item;
 		const minutes = windowMinutes(item.window ?? item);
 		const label = minutes === 300 || minutes === 5 ? "5h" : "Limit";
 		const row = detailRow(label, detail);
@@ -416,13 +416,13 @@ function parseKimiPayload(payload) {
 			rows.push(row);
 		}
 	}
-	const usages = isRecord(payload.usages) ? payload.usages : void 0;
+	const usages = isRecord$1(payload.usages) ? payload.usages : void 0;
 	if (usages != null) {
-		if (!rows.some((r) => r.label === "Week") && isRecord(usages.limit_7d)) {
+		if (!rows.some((r) => r.label === "Week") && isRecord$1(usages.limit_7d)) {
 			const row = ratioRow("Week", usages.limit_7d);
 			if (row != null) rows.unshift(row);
 		}
-		if (!coveredFiveHour.has("5h") && isRecord(usages.limit_5h)) {
+		if (!coveredFiveHour.has("5h") && isRecord$1(usages.limit_5h)) {
 			const row = ratioRow("5h", usages.limit_5h);
 			if (row != null) rows.push(row);
 		}
@@ -440,7 +440,7 @@ function parseKimiPayload(payload) {
 async function queryKimiUsage(apiKey, baseURL, title) {
 	const url = `${baseURL.replace(/\/+$/, "")}/usages`;
 	const controller = new AbortController();
-	const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+	const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS$1);
 	let resp;
 	try {
 		resp = await globalThis.fetch(url, {
@@ -473,7 +473,168 @@ async function queryKimiUsage(apiKey, baseURL, title) {
 		kind: "kimi",
 		title,
 		plan: null,
-		rows: parseKimiPayload(isRecord(payload) ? payload : {}).rows
+		rows: parseKimiPayload(isRecord$1(payload) ? payload : {}).rows
+	};
+}
+// src/providers/minimax.ts
+/**
+* MiniMax Token/Coding Plan usage adapter — China (api.minimaxi.com) and
+* global (api.minimax.io).
+*
+*   GET {base}/v1/token_plan/remains
+*   Authorization: Bearer <apiKey>
+*
+*   {
+*     "model_remains": [
+*       { "model_name": "MiniMax-M2",
+*         "start_time": 1771000000000, "end_time": 1771018000000,
+*         "remains_time": 10800000,
+*         "current_interval_total_count": 4500,
+*         "current_interval_usage_count": 4309,
+*         "current_interval_remaining_percent": 95.8,
+*         "current_interval_status": 1,
+*         "weekly_start_time": ..., "weekly_end_time": ..., "weekly_remains_time": ...,
+*         "current_weekly_total_count": 157500,
+*         "current_weekly_usage_count": 155409,
+*         "current_weekly_remaining_percent": 98.67,
+*         "weekly_boost_permille": 1000,
+*         "current_weekly_status": 1 }
+*     ]
+*   }
+*
+* Naming trap: `current_interval_usage_count` / `current_weekly_usage_count`
+* hold the REMAINING request count, not the used one (used = total - value);
+* `*_remaining_percent` is 0-100 remaining. Cross-checked against the official
+* docs (platform.minimax.io m-plan FAQ), oc-minimax-status and the MiniMaxUsage
+* macOS app on 2026-10-23. Business errors come back as
+* `{ "base_resp": { "status_code": !=0, "status_msg": "..." } }`. Window
+* `status == 3` means unlimited. Counts are request counts (次), windows start
+* at first use and reset independently.
+*/
+const REQUEST_TIMEOUT_MS = 15e3;
+function isRecord(v) {
+	return typeof v === "object" && v !== null && !Array.isArray(v);
+}
+function toFiniteNumber(v) {
+	if (typeof v === "number" && Number.isFinite(v)) return v;
+	if (typeof v === "string" && v.trim() !== "") {
+		const n = Number(v);
+		if (Number.isFinite(n)) return n;
+	}
+}
+function clamp100(n) {
+	return Math.max(0, Math.min(100, n));
+}
+/** Route the quota host from the user's model baseURL (api.minimax.io → global, everything else → China). */
+function minimaxQuotaBase(baseURL) {
+	let host = "";
+	try {
+		host = new URL(baseURL).hostname.toLowerCase();
+	} catch {
+		host = baseURL.toLowerCase();
+	}
+	if (host === "minimax.io" || host.endsWith(".minimax.io")) return "https://api.minimax.io";
+	return "https://api.minimaxi.com";
+}
+/**
+* One quota window → row. `*_usage_count` is the remaining count,
+* `*_remaining_percent` (0-100) the remaining share; `*_status == 3` is
+* unlimited. Reset anchors on `end_time` / `weekly_end_time` (epoch ms).
+*/
+function windowRow(label, item, prefix) {
+	if (toFiniteNumber(item[`${prefix}_status`]) === 3) return {
+		label,
+		percent: null,
+		used: null,
+		limit: null,
+		text: "∞",
+		resetsAt: null
+	};
+	const total = toFiniteNumber(item[`${prefix}_total_count`]);
+	const remaining = toFiniteNumber(item[`${prefix}_usage_count`]);
+	const remainingPercent = toFiniteNumber(item[`${prefix}_remaining_percent`]);
+	const resetMs = toFiniteNumber(item[prefix === "current_interval" ? "end_time" : "weekly_end_time"]);
+	let used = null;
+	if (total != null && total > 0 && remaining != null) used = Math.max(0, total - remaining);
+	let percent = null;
+	if (remainingPercent != null) percent = clamp100(100 - remainingPercent);
+	else if (used != null && total != null && total > 0) percent = clamp100(used / total * 100);
+	if (used == null && percent == null) return null;
+	return {
+		label,
+		percent,
+		used,
+		limit: total != null && total > 0 ? total : null,
+		text: null,
+		resetsAt: resetMs != null && resetMs > 0 ? new Date(resetMs).toISOString() : null
+	};
+}
+/**
+* Parse a `/v1/token_plan/remains` payload into the 5h + weekly rows.
+* `model_remains` can hold several models; an `all` entry is preferred,
+* otherwise the first. Exported for tests.
+*/
+function parseMinimaxRemains(data) {
+	const list = Array.isArray(data.model_remains) ? data.model_remains.filter(isRecord) : [];
+	const entry = list.find((e) => String(e.model_name ?? "").toLowerCase() === "all") ?? list[0];
+	if (entry == null) return {
+		rows: [],
+		modelName: null
+	};
+	return {
+		rows: [windowRow("5h", entry, "current_interval"), windowRow("Week", entry, "current_weekly")].filter((r) => r != null),
+		modelName: typeof entry.model_name === "string" ? entry.model_name : null
+	};
+}
+/**
+* Query the current MiniMax Token/Coding Plan usage.
+*
+* @throws {AuthError} invalid key or non-plan (open-platform) key.
+* @throws {Error} network failure or unexpected status.
+*/
+async function queryMinimaxUsage(apiKey, baseURL, title) {
+	const url = `${minimaxQuotaBase(baseURL)}/v1/token_plan/remains`;
+	const controller = new AbortController();
+	const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+	let resp;
+	try {
+		resp = await globalThis.fetch(url, {
+			method: "GET",
+			signal: controller.signal,
+			headers: {
+				"Authorization": `Bearer ${apiKey}`,
+				"Content-Type": "application/json",
+				"Accept": "application/json"
+			}
+		});
+	} catch (e) {
+		throw new Error(`network error: ${e instanceof Error ? e.message : String(e)}`);
+	} finally {
+		clearTimeout(timer);
+	}
+	const bodyText = await resp.text().catch(() => "");
+	let payload;
+	try {
+		payload = bodyText ? JSON.parse(bodyText) : {};
+	} catch {
+		throw new Error(`MiniMax: HTTP ${resp.status}: malformed JSON response`);
+	}
+	if (resp.status === 401 || resp.status === 403) throw new AuthError("MiniMax: auth failed. Requires a Token/Coding Plan API key");
+	if (isRecord(payload)) {
+		const baseResp = isRecord(payload.base_resp) ? payload.base_resp : void 0;
+		const statusCode = baseResp != null ? toFiniteNumber(baseResp.status_code) : void 0;
+		if (statusCode != null && statusCode !== 0) {
+			if (statusCode === 401 || statusCode === 403) throw new AuthError(`MiniMax: invalid or expired API key (code ${statusCode})`);
+			const msg = typeof baseResp?.status_msg === "string" ? baseResp.status_msg : "unknown error";
+			throw new Error(`MiniMax API error (code ${statusCode}): ${msg}`);
+		}
+	}
+	if (!resp.ok) throw new Error(`MiniMax: HTTP ${resp.status} ${bodyText.slice(0, 120)}`);
+	return {
+		kind: "minimax",
+		title,
+		plan: null,
+		rows: parseMinimaxRemains(isRecord(payload) ? payload : {}).rows
 	};
 }
 // src/providers/resolve.ts
@@ -503,6 +664,10 @@ function classifyByURL(url) {
 		kind: "deepseek",
 		baseURL: url
 	};
+	if (host === "minimax.io" || host.endsWith(".minimax.io") || host === "minimaxi.com" || host.endsWith(".minimaxi.com") || host === "minimaxi.chat" || host.endsWith(".minimaxi.chat")) return {
+		kind: "minimax",
+		baseURL: url
+	};
 }
 function classifyById(id) {
 	const lower = id.toLowerCase();
@@ -522,6 +687,10 @@ function classifyById(id) {
 		kind: "deepseek",
 		baseURL: "https://api.deepseek.com"
 	};
+	if (lower.includes("minimax")) return {
+		kind: "minimax",
+		baseURL: "https://api.minimaxi.com/v1"
+	};
 }
 /** Classify a registered provider: settings.baseURL first, id heuristics fallback. */
 function classifyProvider(p) {
@@ -538,7 +707,8 @@ const ENV_KEYS = {
 		"KIMI_CODING_API_KEY",
 		"MOONSHOT_API_KEY"
 	],
-	deepseek: ["DEEPSEEK_API_KEY"]
+	deepseek: ["DEEPSEEK_API_KEY"],
+	minimax: ["MINIMAX_API_KEY", "MINIMAX_TOKEN"]
 };
 /** auth.json auth-id candidates for catalog providers that authenticate via `opencode auth login`. */
 const AUTH_IDS = {
@@ -553,7 +723,12 @@ const AUTH_IDS = {
 		"kimi-coding",
 		"moonshot"
 	],
-	deepseek: ["deepseek"]
+	deepseek: ["deepseek"],
+	minimax: [
+		"minimax",
+		"minimax-coding",
+		"minimax-token-plan"
+	]
 };
 let authCache;
 function readAuthFile() {
@@ -612,7 +787,7 @@ async function resolveUsage(context) {
 	const p = activeModelProvider(context);
 	if (!p) throw new Error("no active provider");
 	const cls = classifyProvider(p);
-	if (!cls) throw new Error(`provider "${p.id}" is not GLM / Kimi / DeepSeek`);
+	if (!cls) throw new Error(`provider "${p.id}" is not GLM / Kimi / DeepSeek / MiniMax`);
 	const key = resolveApiKey(p, cls.kind);
 	if (!key) throw new AuthError(`no API key for "${p.id}" (settings.apiKey / auth.json / ${(ENV_KEYS[cls.kind] ?? []).join(" / ")})`);
 	const title = p.name || p.id;
@@ -620,6 +795,7 @@ async function resolveUsage(context) {
 		case "glm": return queryGlmUsage(key, cls.baseURL, title);
 		case "kimi": return queryKimiUsage(key, cls.baseURL, title);
 		case "deepseek": return queryDeepseekBalance(key, cls.baseURL, title);
+		case "minimax": return queryMinimaxUsage(key, cls.baseURL, title);
 	}
 }
 // src/tui.tsx

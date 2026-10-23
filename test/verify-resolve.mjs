@@ -1,7 +1,7 @@
 /**
  * End-to-end verification of resolveUsage() with a mocked V2 TUI context.
  * Reads the user's real provider config from ~/.config/opencode/opencode.json
- * and queries every configured GLM / Kimi / DeepSeek provider live.
+ * and queries every configured GLM / Kimi / DeepSeek / MiniMax provider live.
  */
 import assert from 'node:assert/strict'
 import { homedir } from 'node:os'

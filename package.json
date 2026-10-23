@@ -2,7 +2,7 @@
   "name": "opencode-coding-quota",
   "version": "0.2.1",
   "type": "module",
-  "description": "OpenCode TUI sidebar plugin: remaining quota for GLM (CN/global), Kimi Coding Plan and DeepSeek",
+  "description": "OpenCode TUI sidebar plugin: remaining quota for GLM (CN/global), Kimi Coding Plan, DeepSeek and MiniMax Token Plan",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -16,7 +16,8 @@
     "quota",
     "glm",
     "kimi",
-    "deepseek"
+    "deepseek",
+    "minimax"
   ],
   "exports": {
     "./tui": "./dist/tui.js"

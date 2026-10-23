@@ -15,6 +15,7 @@ import { join } from 'node:path'
 const { parseGlmLimits } = await import('../src/providers/glm.ts')
 const { parseKimiPayload } = await import('../src/providers/kimi.ts')
 const { parseDeepseekBalance } = await import('../src/providers/deepseek.ts')
+const { parseMinimaxRemains, minimaxQuotaBase } = await import('../src/providers/minimax.ts')
 
 let passed = 0
 let failed = 0
@@ -181,6 +182,91 @@ test('insufficient balance flags warn', () => {
 })
 
 // ---------------------------------------------------------------------------
+// MiniMax — shape cross-checked against official docs + oc-minimax-status +
+// MiniMaxUsage (macOS) on 2026-10-23
+// ---------------------------------------------------------------------------
+
+console.log('minimax:')
+
+test('usage_count is REMAINING: used derived, percent from remaining_percent', () => {
+  const { rows, modelName } = parseMinimaxRemains({
+    model_remains: [
+      {
+        model_name: 'MiniMax-M2',
+        start_time: 1771000000000, end_time: 1792651499353, remains_time: 3600000,
+        current_interval_total_count: 4500, current_interval_usage_count: 4309,
+        current_interval_remaining_percent: 95.8,
+        weekly_start_time: 1771000000000, weekly_end_time: 1793256299353, weekly_remains_time: 86400000,
+        current_weekly_total_count: 157500, current_weekly_usage_count: 155409,
+        current_weekly_remaining_percent: 98.67,
+      },
+    ],
+  })
+  assert.equal(modelName, 'MiniMax-M2')
+  assert.equal(rows.length, 2)
+  assert.equal(rows[0].label, '5h')
+  assert.equal(rows[0].used, 191) // 4500 - 4309
+  assert.equal(rows[0].limit, 4500)
+  assert.equal(Math.round(rows[0].percent), 4) // 100 - 95.8
+  assert.ok(rows[0].resetsAt.startsWith('2026'))
+  assert.equal(rows[1].label, 'Week')
+  assert.equal(rows[1].used, 2091) // 157500 - 155409
+  assert.equal(Math.round(rows[1].percent), 1) // 100 - 98.67
+})
+
+test('percent computed from counts when remaining_percent absent', () => {
+  const { rows } = parseMinimaxRemains({
+    model_remains: [
+      {
+        model_name: 'MiniMax-M2',
+        current_interval_total_count: 1500, current_interval_usage_count: 1500,
+      },
+    ],
+  })
+  assert.equal(rows.length, 1) // weekly fields absent → no week row
+  assert.equal(rows[0].used, 0)
+  assert.equal(rows[0].percent, 0)
+})
+
+test('weekly status 3 → unlimited text row', () => {
+  const { rows } = parseMinimaxRemains({
+    model_remains: [
+      {
+        model_name: 'all',
+        current_interval_total_count: 4500, current_interval_usage_count: 4500,
+        current_weekly_status: 3,
+      },
+    ],
+  })
+  assert.equal(rows[0].label, '5h')
+  assert.equal(rows[1].label, 'Week')
+  assert.equal(rows[1].percent, null)
+  assert.equal(rows[1].text, '∞')
+})
+
+test('prefers model_name=all; empty payload → no rows', () => {
+  const { rows, modelName } = parseMinimaxRemains({
+    model_remains: [
+      { model_name: 'MiniMax-M2', current_interval_total_count: 100, current_interval_usage_count: 50 },
+      { model_name: 'all', current_interval_total_count: 200, current_interval_usage_count: 100 },
+    ],
+  })
+  assert.equal(modelName, 'all')
+  assert.equal(rows[0].limit, 200)
+
+  const empty = parseMinimaxRemains({})
+  assert.equal(empty.rows.length, 0)
+  assert.equal(empty.modelName, null)
+})
+
+test('quota base routes global vs china hosts', () => {
+  assert.equal(minimaxQuotaBase('https://api.minimax.io/v1'), 'https://api.minimax.io')
+  assert.equal(minimaxQuotaBase('https://api.minimaxi.com/v1'), 'https://api.minimaxi.com')
+  assert.equal(minimaxQuotaBase('https://www.minimaxi.com/v1/a2a'), 'https://api.minimaxi.com')
+  assert.equal(minimaxQuotaBase('https://api.minimaxi.chat/v1'), 'https://api.minimaxi.com')
+})
+
+// ---------------------------------------------------------------------------
 // live smoke test — reads provider config from opencode.json
 // ---------------------------------------------------------------------------
 
@@ -191,6 +277,7 @@ if (process.argv.includes('--live')) {
   const { queryGlmUsage } = await import('../src/providers/glm.ts')
   const { queryKimiUsage } = await import('../src/providers/kimi.ts')
   const { queryDeepseekBalance } = await import('../src/providers/deepseek.ts')
+  const { queryMinimaxUsage } = await import('../src/providers/minimax.ts')
 
   for (const [id, def] of Object.entries(config.provider ?? {})) {
     const options = def.options ?? {}
@@ -207,6 +294,8 @@ if (process.argv.includes('--live')) {
         data = await queryKimiUsage(apiKey, baseURL, def.name ?? id)
       else if (host.includes('deepseek'))
         data = await queryDeepseekBalance(apiKey, baseURL, def.name ?? id)
+      else if (host.includes('minimax'))
+        data = await queryMinimaxUsage(apiKey, baseURL, def.name ?? id)
       else
         continue
       console.log(`  ok  ${id}: ${JSON.stringify(data, null, 2).split('\n').slice(0, 12).join('\n')}`)

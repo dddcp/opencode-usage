@@ -3,7 +3,7 @@
  *
  * The panel follows the model currently selected in the TUI prompt
  * (`context.ui.model.current()` — reactive) and only renders when that model
- * is served by GLM / Kimi / DeepSeek. Detection anchors on the provider's
+ * is served by GLM / Kimi / DeepSeek / MiniMax. Detection anchors on the provider's
  * baseURL host (users register these with custom provider ids like "lin-kimi"
  * or "my-glm"), with an id heuristic fallback.
  */
@@ -14,6 +14,7 @@ import { AuthError } from '../types.ts'
 import { queryDeepseekBalance } from './deepseek.ts'
 import { queryGlmUsage } from './glm.ts'
 import { queryKimiUsage } from './kimi.ts'
+import { queryMinimaxUsage } from './minimax.ts'
 
 /** Minimal structural view of a provider entry from `context.data.location.provider`. */
 export interface ProviderEntry {
@@ -27,7 +28,7 @@ export interface ProviderEntry {
 // ---------------------------------------------------------------------------
 
 export interface Classification {
-  kind: 'glm' | 'kimi' | 'deepseek'
+  kind: 'glm' | 'kimi' | 'deepseek' | 'minimax'
   /** Model API base for building request URLs. */
   baseURL: string
 }
@@ -54,6 +55,12 @@ function classifyByURL(url: string | undefined): Classification | undefined {
     return { kind: 'kimi', baseURL: url }
   if (host === 'api.deepseek.com' || host.endsWith('.deepseek.com'))
     return { kind: 'deepseek', baseURL: url }
+  if (
+    host === 'minimax.io' || host.endsWith('.minimax.io')
+    || host === 'minimaxi.com' || host.endsWith('.minimaxi.com')
+    || host === 'minimaxi.chat' || host.endsWith('.minimaxi.chat')
+  )
+    return { kind: 'minimax', baseURL: url }
 
   return undefined
 }
@@ -68,6 +75,8 @@ function classifyById(id: string): Classification | undefined {
     return { kind: 'kimi', baseURL: 'https://api.kimi.com/coding/v1' }
   if (lower.includes('deepseek'))
     return { kind: 'deepseek', baseURL: 'https://api.deepseek.com' }
+  if (lower.includes('minimax'))
+    return { kind: 'minimax', baseURL: 'https://api.minimaxi.com/v1' }
   return undefined
 }
 
@@ -85,6 +94,7 @@ const ENV_KEYS: Record<Classification['kind'], string[]> = {
   glm: ['ZAI_API_KEY', 'ZHIPU_API_KEY', 'ZHIPUAI_API_KEY'],
   kimi: ['KIMI_API_KEY', 'KIMI_CODING_API_KEY', 'MOONSHOT_API_KEY'],
   deepseek: ['DEEPSEEK_API_KEY'],
+  minimax: ['MINIMAX_API_KEY', 'MINIMAX_TOKEN'],
 }
 
 /** auth.json auth-id candidates for catalog providers that authenticate via `opencode auth login`. */
@@ -92,6 +102,7 @@ const AUTH_IDS: Record<Classification['kind'], string[]> = {
   glm: ['zhipuai-coding-plan', 'zhipuai', 'zai', 'zai-coding-plan'],
   kimi: ['kimi', 'kimi-coding', 'moonshot'],
   deepseek: ['deepseek'],
+  minimax: ['minimax', 'minimax-coding', 'minimax-token-plan'],
 }
 
 interface AuthEntry {
@@ -181,7 +192,7 @@ export async function resolveUsage(context: Context): Promise<UsageData> {
 
   const cls = classifyProvider(p)
   if (!cls)
-    throw new Error(`provider "${p.id}" is not GLM / Kimi / DeepSeek`)
+    throw new Error(`provider "${p.id}" is not GLM / Kimi / DeepSeek / MiniMax`)
 
   const key = resolveApiKey(p, cls.kind)
   if (!key) {
@@ -198,5 +209,7 @@ export async function resolveUsage(context: Context): Promise<UsageData> {
       return queryKimiUsage(key, cls.baseURL, title)
     case 'deepseek':
       return queryDeepseekBalance(key, cls.baseURL, title)
+    case 'minimax':
+      return queryMinimaxUsage(key, cls.baseURL, title)
   }
 }

@@ -2,7 +2,8 @@
 //
 // opencode-usage — TUI sidebar plugin showing the remaining quota of the
 // active coding-plan provider: GLM (智谱国内 open.bigmodel.cn / 国际 z.ai),
-// Kimi Coding Plan, and DeepSeek (pay-as-you-go balance).
+// Kimi Coding Plan, DeepSeek (pay-as-you-go balance), and MiniMax
+// Token/Coding Plan (国内 api.minimaxi.com / 国际 api.minimax.io).
 //
 // Loaded by OpenCode V2 from  ~/.config/opencode/plugins/opencode-usage/tui.tsx
 // (or a project-level .opencode/plugins/ copy). The same module is also read

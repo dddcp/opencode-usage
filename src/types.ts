@@ -5,7 +5,7 @@
  * where it came from.
  */
 
-export type ProviderKind = 'glm' | 'kimi' | 'deepseek'
+export type ProviderKind = 'glm' | 'kimi' | 'deepseek' | 'minimax'
 
 /**
  * One row of quota info.

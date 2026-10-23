@@ -8,7 +8,7 @@ OpenCode TUI 侧边栏插件：在会话右侧面板实时查看当前模型所�
 
 面板跟随 TUI 中当前选中的模型：切换模型时自动切换到对应 provider 的额度；
 每 5 分钟自动刷新，每轮对话结束后 3 秒也会刷新一次，点击 `↻` 手动刷新，
-点击标题行可折叠。当前模型不属于下列三家时，面板显示 unsupported 提示。
+点击标题行可折叠。当前模型不属于下列四家时，面板显示 unsupported 提示。
 
 ## 支持的 Provider
 
@@ -18,10 +18,12 @@ OpenCode TUI 侧边栏插件：在会话右侧面板实时查看当前模型所�
 | GLM 国际（z.ai） | `api.z.ai`                             | 同上（两家共用同一套接口）                                             |
 | Kimi Coding Plan | `api.kimi.com`（`*.moonshot.ai` 等） | 周 / 5 小时窗口百分比与重置倒计时；加油包（booster）开启时显示 ¥ 用量 |
 | DeepSeek         | `api.deepseek.com`                     | 账户余额（¥ / $）；余额不足时红色警示                                 |
+| MiniMax 国内     | `api.minimaxi.com`（`*.minimaxi.chat`） | 5 小时窗口 / 周窗口的调用次数百分比、已用/总量、重置倒计时             |
+| MiniMax 国际     | `api.minimax.io`                       | 同上（两家共用同一套接口）                                             |
 
 API Key 解析顺序：provider 配置里的 `options.apiKey` →
 `~/.local/share/opencode/auth.json`（`opencode auth login` 的内置套餐登录）→
-环境变量（`ZAI_API_KEY` / `ZHIPU_API_KEY`、`KIMI_API_KEY` / `KIMI_CODING_API_KEY`、`DEEPSEEK_API_KEY`）。
+环境变量（`ZAI_API_KEY` / `ZHIPU_API_KEY`、`KIMI_API_KEY` / `KIMI_CODING_API_KEY`、`DEEPSEEK_API_KEY`、`MINIMAX_API_KEY`）。
 
 ## 安装
 
@@ -65,6 +67,7 @@ src/
     ├── glm.ts           # 智谱国内/国际 quota 接口适配
     ├── kimi.ts          # Kimi Coding Plan /usages 适配
     ├── deepseek.ts      # DeepSeek /user/balance 适配
+    ├── minimax.ts       # MiniMax Token/Coding Plan /v1/token_plan/remains 适配
     └── resolve.ts       # 当前模型 → provider 识别、key 解析、路由
 scripts/
 └── install.mjs          # 跨平台安装/卸载脚本（链接 src/ 到 opencode 插件目录）
@@ -99,6 +102,13 @@ node test/verify-resolve.mjs   # 真实接口端到端验证（读你本机的 o
   个别新 key 无用量时服务端返回 `{}`，面板显示 "no usage data yet"。
 - **DeepSeek**：`GET {base}/user/balance`，`Authorization: Bearer`，返回
   `balance_infos[].total_balance`（字符串金额，按货币符号展示）。
+- **MiniMax**：`GET {base}/v1/token_plan/remains`（国内 `api.minimaxi.com`、
+  国际 `api.minimax.io`），`Authorization: Bearer`。响应 `model_remains[]` 中
+  `current_interval_*` 为 5 小时窗口、`current_weekly_*` 为周窗口；注意命名陷阱：
+  `*_usage_count` 实际是**剩余**次数（已用 = `*_total_count` − 该值），
+  `*_remaining_percent` 为 0–100 的剩余百分比，`*_status == 3` 表示该窗口不限量
+  （显示 ∞），`end_time` / `weekly_end_time` 为 epoch 毫秒的重置时间。业务错误
+  通过 `base_resp.status_code != 0` 返回（可能伴随 HTTP 200）。
 
 ## License
 
