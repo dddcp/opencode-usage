@@ -1,12 +1,11 @@
 name: publish
 
-# CI on every push to main; publish to npm only on version tags (v*) or a
-# manual dispatch. The published version comes from package.json — bump it
-# with `npm version patch|minor|major` before tagging.
+# Publish to npm on version tags (v*) or a manual dispatch — no CI on plain
+# main pushes. The published version comes from package.json — bump it with
+# `npm version patch|minor|major` before tagging.
 
 on:
   push:
-    branches: [main]
     tags: ['v*']
   workflow_dispatch:
 
